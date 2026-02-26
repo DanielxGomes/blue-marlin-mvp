@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: HTML lint
+        run: npx --yes htmlhint "*.html"
+
+      - name: SQL sanity checks
+        run: |
+          test -f db/migrations/005_supabase_rls_baseline.sql
+          test -f db/migrations/006_catalog_admin_and_funnel.sql
+          test -f db/migrations/007_parking_inventory_lock_and_admin_auth.sql
+          grep -R "BEGIN;" db/migrations/*.sql >/dev/null
+          grep -R "COMMIT;" db/migrations/*.sql >/dev/null
+
+      - name: Secret guard (basic)
+        run: |
+          ! grep -RInE "(SUPABASE_SERVICE_KEY|ghp_[A-Za-z0-9]{30,}|sk_live_[A-Za-z0-9]{20,})" . --exclude-dir=.git
+
+      - name: Smoke static pages
+        run: |
+          python3 -m http.server 18080 >/tmp/web.log 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:18080/index.html >/dev/null
+          curl -fsS http://127.0.0.1:18080/admin.html >/dev/null
