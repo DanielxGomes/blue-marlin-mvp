@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>Blue Marlin • Admin Catálogo</title>
+  <style>
+    body{margin:0;font-family:Inter,system-ui;background:#0b1020;color:#e7ecff}
+    .wrap{max-width:980px;margin:0 auto;padding:18px}
+    .card{background:#121a33;border:1px solid #243058;border-radius:14px;padding:14px;margin-bottom:12px}
+    input,button{border-radius:10px;border:1px solid #2e3c6e;background:#101833;color:#e7ecff;padding:10px}
+    button{cursor:pointer;background:#3b82f6;border:none;font-weight:700}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #28335f;text-align:left}
+    .row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px}
+    .muted{color:#9aa9d6;font-size:12px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Blue Marlin • Admin Catálogo</h2>
+  <div class="card">
+    <p class="muted">Login Supabase (usuário com permissão para editar <code>services_catalog</code>).</p>
+    <div class="row" style="grid-template-columns:2fr 2fr auto">
+      <input id="email" placeholder="email" />
+      <input id="pass" type="password" placeholder="senha" />
+      <button id="login">Entrar</button>
+    </div>
+    <p id="authStatus" class="muted"></p>
+  </div>
+
+  <div class="card">
+    <h3>Novo serviço</h3>
+    <div class="row">
+      <input id="code" placeholder="codigo (ex: cafe_manha)" />
+      <input id="name" placeholder="nome" />
+      <input id="price" type="number" step="0.01" placeholder="preço" />
+      <button id="add">Adicionar</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Catálogo atual</h3>
+    <table>
+      <thead><tr><th>Código</th><th>Nome</th><th>Preço</th><th>Ativo</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+  const DEFAULT_SUPABASE_URL = 'https://adifcdvlglntjutalbwk.supabase.co';
+  const DEFAULT_SUPABASE_KEY = 'sb_publishable_5A_qAkNtIqRTLOE21y0crw_k5gBJjqS';
+  const supabase = window.supabase.createClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY);
+
+  async function load(){
+    const {data,error}=await supabase.from('services_catalog').select('id,code,name,unit_price,active').order('name');
+    const tb=document.getElementById('rows');
+    if(error){ tb.innerHTML=`<tr><td colspan="4">Erro: ${error.message}</td></tr>`; return; }
+    tb.innerHTML=(data||[]).map(r=>`<tr><td>${r.code}</td><td>${r.name}</td><td>R$ ${Number(r.unit_price).toFixed(2)}</td><td><input type='checkbox' ${r.active?'checked':''} onchange='toggleActive("${r.id}",this.checked)' /></td></tr>`).join('');
+  }
+
+  async function toggleActive(id,active){
+    const {error}=await supabase.from('services_catalog').update({active}).eq('id',id);
+    if(error) alert(error.message);
+    await load();
+  }
+  window.toggleActive=toggleActive;
+
+  document.getElementById('login').onclick=async()=>{
+    const email=document.getElementById('email').value.trim();
+    const password=document.getElementById('pass').value;
+    const {error}=await supabase.auth.signInWithPassword({email,password});
+    document.getElementById('authStatus').textContent=error?`Falha: ${error.message}`:'Autenticado';
+    if(!error) load();
+  };
+
+  document.getElementById('add').onclick=async()=>{
+    const payload={
+      code:document.getElementById('code').value.trim(),
+      name:document.getElementById('name').value.trim(),
+      unit_price:Number(document.getElementById('price').value||0),
+      active:true
+    };
+    const {error}=await supabase.from('services_catalog').insert(payload);
+    if(error) return alert(error.message);
+    await load();
+  };
+
+  load();
+</script>
+</body>
+</html>
