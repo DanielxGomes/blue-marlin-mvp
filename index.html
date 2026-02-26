@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="format-detection" content="telephone=no" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>Blue Marlin Stay • Pedidos & Serviços</title>
+  <style>
+    :root {
+      --bg: #f7f7f7;
+      --bg-soft: #ffffff;
+      --card: #ffffff;
+      --line: #ececec;
+      --text: #1f1f1f;
+      --muted: #6f6f6f;
+      --brand: #ea1d2c;
+      --brand-2: #f95d66;
+      --ok: #16a34a;
+      --warn: #ca8a04;
+      --danger: #dc2626;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100dvh; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+    }
+    .container { max-width: 1150px; margin: 0 auto; padding: 12px; }
+    .brand {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 0 rgba(0,0,0,.04);
+    }
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid #ffd3d6;
+      background: #fff3f4;
+      object-fit: cover;
+      flex: 0 0 auto;
+    }
+    .logo {
+      font-weight: 800;
+      letter-spacing: .2px;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+    .logo span { color: var(--brand); }
+    .muted { color: var(--muted); }
+    .pill {
+      background: #fff2f3;
+      border: 1px solid #ffd6d9;
+      color: #c81e2b;
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+
+    .hidden { display: none !important; }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #777;
+    }
+    .dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid #ddd;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      background: #fff;
+    }
+    .dot.active { background: #ffe8ea; border-color: #ffbcc2; color:#b31220; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+    label { font-size: 13px; color: var(--muted); display:block; margin-bottom: 6px; }
+    input, select {
+      width: 100%;
+      padding: 11px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: var(--text);
+    }
+    input[readonly] { opacity: .9; }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-ghost { background: #fff; border: 1px solid var(--line); color: var(--text); }
+    .btn-danger { background: #fff5f5; color: #b91c1c; border: 1px solid #fecaca; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 12px;
+    }
+
+    .services {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+      gap: 10px;
+    }
+    .service {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .service .top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .service small { display:block; min-height: 38px; margin: 7px 0 10px; color: var(--muted); }
+
+    .cart-item {
+      border-bottom: 1px dashed var(--line);
+      padding: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .totals { margin-top: 10px; border-top:1px solid var(--line); padding-top: 10px; font-size: 14px; }
+    .row { display:flex; justify-content:space-between; margin-bottom: 5px; }
+
+    .chips { display:flex; gap:6px; flex-wrap: wrap; margin-top:8px; }
+    .chip { background:#0f2944; border:1px solid #2d4d73; color:#d7e9ff; border-radius:999px; padding:6px 10px; font-size:12px; }
+
+    .parking-grid {
+      display:grid;
+      grid-template-columns: repeat(5, minmax(44px,1fr));
+      gap:8px;
+      margin-top:8px;
+    }
+    .parking-seat {
+      border:1px solid #d9d9d9;
+      border-radius:10px;
+      padding:8px 4px;
+      font-size:12px;
+      font-weight:700;
+      text-align:center;
+      user-select:none;
+    }
+    .parking-seat.available { background:#e8f8ee; color:#166534; border-color:#86efac; cursor:pointer; }
+    .parking-seat.unavailable { background:#fde8e8; color:#991b1b; border-color:#fca5a5; cursor:not-allowed; opacity:.8; }
+    .parking-seat.selected { background:#dbeafe; color:#1e3a8a; border-color:#93c5fd; }
+
+    .cart-toggle { display: none; width:100%; margin-top: 8px; }
+
+    .fab-cart {
+      position: fixed;
+      right: 14px;
+      bottom: 78px;
+      z-index: 30;
+      border-radius: 999px;
+      background: var(--brand);
+      color: #fff;
+      border: 0;
+      padding: 11px 14px;
+      font-weight: 700;
+      display: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,.2);
+    }
+    .fab-cart.bump { transform: scale(1.06); transition: transform .2s; }
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 25;
+      background: #fff;
+      border-top: 1px solid #e8e8e8;
+      display: none;
+      grid-template-columns: repeat(3,1fr);
+      gap: 6px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    }
+    .bottom-nav button {
+      background: #fff;
+      border: 1px solid #ececec;
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    #status { margin-top: 8px; font-size: 12px; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+
+    @media (max-width: 920px) {
+      .container { padding: 10px; }
+      .brand { padding: 12px; margin-bottom: 10px; }
+      .brand-logo { width: 38px; height: 38px; border-radius: 10px; }
+      .logo { font-size: 18px; }
+      .layout { grid-template-columns: 1fr; gap: 10px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .card { padding: 12px; border-radius: 14px; }
+      .services { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .service { padding: 8px; }
+      .service small { min-height: 28px; font-size: 12px; }
+      .service button { padding: 8px; font-size: 13px; }
+      .step { margin-bottom: 6px; }
+      #screen1 { min-height: calc(100dvh - 92px); display: flex; flex-direction: column; justify-content: center; }
+
+      /* Carrinho menos intrusivo no mobile */
+      #screen2 aside.card {
+        position: static;
+        margin-top: 2px;
+        max-height: 56dvh;
+        overflow: auto;
+      }
+      #screen2 aside.card h3 { font-size: 18px; margin-bottom: 2px; }
+      #cart .cart-item { padding: 6px 0; }
+      #checkout, #clear, #back { padding: 9px 10px; font-size: 14px; }
+      .totals { font-size: 13px; }
+      .cart-toggle { display:block; }
+      .cart-panel.collapsed { display:none; }
+      .fab-cart, .bottom-nav { display: grid; }
+      .fab-cart { display: block; }
+      #screen2 { padding-bottom: 74px; }
+      #screen2 aside.card { margin-bottom: 56px; }
+    }
+    @media (max-width: 560px) {
+      .services { grid-template-columns: 1fr; }
+      h2 { font-size: 20px; }
+      .pill { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="brand">
+      <div class="brand-left">
+        <img
+          class="brand-logo"
+          alt="Logo Blue Marlin"
+          src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%2327b7ff'/><stop offset='1' stop-color='%2328dfc0'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='%230a2440'/><path d='M10 39c10 0 18-5 24-14 5-8 9-11 20-13-4 5-7 9-8 13 4-1 7-3 10-6-2 6-6 11-12 15-4 3-9 5-15 5 3 3 8 5 14 6-4 2-8 3-12 3-8 0-15-3-21-9z' fill='url(%23g)'/></svg>"
+        />
+        <div>
+          <div class="logo">Blue <span>Marlin</span> Stay • Búzios</div>
+          <div class="muted">Pedido digital de produtos e serviços</div>
+        </div>
+      </div>
+      <span class="pill">MVP</span>
+    </header>
+
+    <section id="screen1" class="card">
+      <div class="step">
+        <div class="dot active">1</div><strong>Identificação</strong>
+        <div class="dot">2</div><span>Pedidos</span>
+      </div>
+      <h2 style="margin:0 0 6px">Bem-vindo(a) 👋</h2>
+      <p class="muted" style="margin:0 0 12px">Informe seus dados para acessar o painel de pedidos.</p>
+
+      <div class="grid-3">
+        <div>
+          <label>Telefone WhatsApp</label>
+          <input id="guestPhone" type="text" placeholder="Ex.: 5551999990000" />
+          <p id="phoneHint" class="muted" style="font-size:11px;margin:6px 0 0">Dica: o link personalizado preenche este campo automaticamente.</p>
+        </div>
+        <div>
+          <label>Nome do hóspede</label>
+          <input id="guestName" type="text" placeholder="Ex.: João Silva" />
+        </div>
+        <div>
+          <label>Número do quarto</label>
+          <input id="roomNumber" type="text" inputmode="numeric" maxlength="4" placeholder="Ex.: 12" />
+          <p class="muted" style="font-size:11px;margin:6px 0 0">Use apenas números (ex.: 12).</p>
+        </div>
+      </div>
+
+      <button id="continueBtn" class="btn-primary" style="margin-top:12px;">Continuar para pedidos</button>
+      <p id="statusStep1" class="muted" style="margin-top:8px;font-size:12px"></p>
+    </section>
+
+    <section id="screen2" class="hidden">
+      <div class="layout">
+        <div class="card">
+          <div class="step">
+            <div class="dot">1</div><span>Identificação</span>
+            <div class="dot active">2</div><strong>Pedidos</strong>
+          </div>
+          <h2 style="margin:0">Painel de pedidos</h2>
+          <p id="guestHeader" class="muted" style="margin:4px 0 10px"></p>
+
+          <h3 id="sec-services" style="margin:0 0 8px">Serviços avulsos</h3>
+          <div id="services" class="services"></div>
+
+          <div id="sec-parking" class="card" style="margin-top:12px; padding:12px;">
+            <h3 style="margin:0">Estacionamento</h3>
+            <p class="muted" style="margin:4px 0 10px">Produto separado da diária • cobrança por diária</p>
+            <div class="grid-2">
+              <div>
+                <label>Check-in estacionamento</label>
+                <input id="parkStartDate" type="date" />
+              </div>
+              <div>
+                <label>Check-out estacionamento</label>
+                <input id="parkEndDate" type="date" />
+              </div>
+              <div style="grid-column:1 / -1;">
+                <label>Período rápido</label>
+                <div class="chips">
+                  <button type="button" class="chip" data-nights="1">+1 diária</button>
+                  <button type="button" class="chip" data-nights="2">+2 diárias</button>
+                  <button type="button" class="chip" data-nights="3">+3 diárias</button>
+                  <button type="button" class="chip" data-nights="7">+7 diárias</button>
+                </div>
+                <p id="parkingNights" class="muted" style="margin:8px 0 0;font-size:12px"></p>
+              </div>
+              <div>
+                <label>Tipo de vaga</label>
+                <select id="spotSize">
+                  <option value="" selected>Selecionar tipo de vaga</option>
+                  <option value="padrao">Padrão</option>
+                  <option value="grande">Grande</option>
+                </select>
+              </div>
+              <div style="grid-column:1 / -1;">
+                <label>Escolha sua vaga</label>
+                <div id="parkingGrid" class="parking-grid"></div>
+                <p class="muted" style="font-size:12px;margin:6px 0 0;">🟢 Disponível · 🔴 Indisponível · 🔵 Selecionada</p>
+              </div>
+            </div>
+            <p id="parkingAvailability" class="muted" style="margin:8px 0 0;font-size:12px"></p>
+            <button id="addParking" class="btn-primary" style="margin-top:10px;">Adicionar estacionamento</button>
+          </div>
+        </div>
+
+        <aside id="sec-cart" class="card">
+          <h3 style="margin:0">Sacola</h3>
+          <p class="muted" style="margin:4px 0 10px">Quarto <strong id="roomBadge">-</strong></p>
+
+          <button id="cartToggle" class="btn-ghost cart-toggle">Ver/ocultar sacola</button>
+
+          <div id="cartPanel" class="cart-panel">
+            <div id="cart"></div>
+
+            <div class="totals">
+              <div class="row"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
+              <div class="row"><span id="feeLabel">Taxa serviço (calculada no fechamento)</span><strong id="fee">R$ 0,00</strong></div>
+              <div class="row"><span>Total</span><strong id="total">R$ 0,00</strong></div>
+            </div>
+
+            <button id="checkout" class="btn-primary" style="margin-top:10px;width:100%">Finalizar pedido</button>
+            <button id="clear" class="btn-ghost" style="margin-top:8px;width:100%">Limpar carrinho</button>
+            <button id="back" class="btn-ghost" style="margin-top:8px;width:100%">Voltar</button>
+
+            <p id="status" class="muted"></p>
+          </div>
+        </aside>
+      </div>
+
+      <button id="fabCart" class="fab-cart hidden">Sacola (0) • R$ 0,00</button>
+      <nav id="mobileNav" class="bottom-nav hidden">
+        <button type="button" data-target="sec-services">Serviços</button>
+        <button type="button" data-target="sec-parking">Estacionamento</button>
+        <button type="button" data-target="sec-cart">Sacola</button>
+      </nav>
+    </section>
+
+    <section id="screen3" class="card hidden">
+      <div class="step">
+        <div class="dot">1</div><span>Identificação</span>
+        <div class="dot">2</div><span>Pedidos</span>
+        <div class="dot active">3</div><strong>Sucesso</strong>
+      </div>
+      <h2 style="margin:0 0 6px">Pedido realizado com sucesso 🎉</h2>
+      <p id="successText" class="muted" style="margin:0 0 12px"></p>
+      <div class="grid-2">
+        <button id="newOrder" class="btn-primary">Fazer novo pedido</button>
+        <button id="backToOrders" class="btn-ghost">Voltar para pedidos</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const services = [
+      { id: 'limpeza', name: 'Limpeza avulsa', price: 80, desc: 'Solicitação com mínimo de 48h de antecedência.' },
+      { id: 'kit', name: 'Kit boas-vindas', price: 55, desc: 'Amenidades, água e itens essenciais.' },
+      { id: 'enxoval', name: 'Reposição de enxoval', price: 45, desc: 'Troca extra de toalhas e roupa de cama.' },
+      { id: 'late', name: 'Late checkout', price: 90, desc: 'Extensão de horário, sujeito a disponibilidade.' },
+      { id: 'early', name: 'Early check-in', price: 90, desc: 'Acesso antecipado, sujeito a disponibilidade.' },
+      { id: 'manut', name: 'Manutenção prioritária', price: 120, desc: 'Atendimento emergencial fora do horário comercial.' }
+    ];
+
+    const parkingLots = {
+      padrao: Array.from({ length: 20 }, (_, i) => `PD${String(i + 1).padStart(2, '0')}`),
+      grande: Array.from({ length: 10 }, (_, i) => `GR${String(i + 1).padStart(2, '0')}`)
+    };
+    const parkingDailyPrice = { padrao: 35, grande: 55 };
+
+    const state = { guest: null, cart: [], parkingBookings: [], serviceFeeApplied: false, accessToken: '', selectedParkingSpot: '' };
+
+    const DEFAULT_SUPABASE_URL = 'https://adifcdvlglntjutalbwk.supabase.co';
+    const DEFAULT_SUPABASE_KEY = 'sb_publishable_5A_qAkNtIqRTLOE21y0crw_k5gBJjqS';
+
+    function getSupabaseClient() {
+      const params = new URLSearchParams(window.location.search);
+      const fromQueryUrl = params.get('sb_url');
+      const fromQueryKey = params.get('sb_key');
+      const fromStorageUrl = localStorage.getItem('blue_marlin_sb_url');
+      const fromStorageKey = localStorage.getItem('blue_marlin_sb_key');
+
+      const sbUrl = fromQueryUrl || fromStorageUrl || DEFAULT_SUPABASE_URL;
+      const sbKey = fromQueryKey || fromStorageKey || DEFAULT_SUPABASE_KEY;
+
+      if (fromQueryUrl) localStorage.setItem('blue_marlin_sb_url', fromQueryUrl);
+      if (fromQueryKey) localStorage.setItem('blue_marlin_sb_key', fromQueryKey);
+
+      return window.supabase.createClient(sbUrl, sbKey);
+    }
+
+    async function saveOrderOnBackend(payload) {
+      const supabase = getSupabaseClient();
+
+      const attempt = async (body) => {
+        const { data, error } = await supabase.rpc('create_order_public', { p_payload: body });
+        if (error) throw new Error(error.message || 'Falha ao salvar pedido');
+        if (data?.error) throw new Error(data.message || 'Falha ao salvar pedido');
+        return data || {};
+      };
+
+      try {
+        return await attempt(payload);
+      } catch (e) {
+        const msg = String(e?.message || '');
+        if (/Token de acesso inválido|expirado/i.test(msg)) {
+          await ensureAccessToken(payload?.guest?.guestPhone || '', true);
+          const retryPayload = { ...payload, accessToken: state.accessToken };
+          return await attempt(retryPayload);
+        }
+        throw e;
+      }
+    }
+
+    const currency = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const dateOnly = d => new Date(`${d}T00:00:00`);
+    const daysBetween = (start, end) => Math.round((dateOnly(end) - dateOnly(start)) / 86400000);
+    const overlaps = (s1,e1,s2,e2) => dateOnly(s1) < dateOnly(e2) && dateOnly(s2) < dateOnly(e1);
+
+    function decodeCtx(ctx) {
+      try {
+        const b64 = ctx.replace(/-/g, '+').replace(/_/g, '/');
+        const json = decodeURIComponent(escape(atob(b64)));
+        return JSON.parse(json);
+      } catch { return null; }
+    }
+
+    function phoneFromParams(params) {
+      const keys = ['phone', 'whatsapp', 'wa', 'tel'];
+      for (const k of keys) {
+        const v = (params.get(k) || '').replace(/\D/g, '');
+        if (v) return v;
+      }
+      const ctx = params.get('ctx');
+      if (ctx) {
+        const data = decodeCtx(ctx);
+        const v = String(data?.phone || '').replace(/\D/g, '');
+        if (v) return v;
+      }
+      return '';
+    }
+
+    function applyBrandLogoFromLink() {
+      const params = new URLSearchParams(window.location.search);
+      const logo = params.get('logo');
+      if (!logo) return;
+      try {
+        const url = new URL(logo);
+        if (url.protocol === 'http:' || url.protocol === 'https:') {
+          document.querySelector('.brand-logo').src = url.toString();
+        }
+      } catch {}
+    }
+
+    function prefillPhoneFromLink() {
+      const input = document.getElementById('guestPhone');
+      const hint = document.getElementById('phoneHint');
+
+      const q = new URLSearchParams(window.location.search);
+      const tokenFromQuery = q.get('tk') || q.get('token') || '';
+      if (tokenFromQuery) {
+        state.accessToken = tokenFromQuery;
+      }
+
+      let phone = phoneFromParams(q);
+
+      if (!phone && window.location.hash) {
+        const h = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+        phone = phoneFromParams(new URLSearchParams(h));
+      }
+
+      if (!phone) {
+        const ref = document.referrer || '';
+        try {
+          const refUrl = new URL(ref);
+          phone = phoneFromParams(refUrl.searchParams);
+        } catch {}
+      }
+
+      if (!phone) {
+        phone = (localStorage.getItem('blue_marlin_phone') || '').replace(/\D/g, '');
+      }
+
+      if (phone) {
+        input.value = phone;
+        input.readOnly = false;
+        localStorage.setItem('blue_marlin_phone', phone);
+        hint.textContent = 'WhatsApp identificado automaticamente pelo link (você pode editar).';
+      } else {
+        input.readOnly = false;
+        hint.textContent = 'Não veio telefone no link. Para autofill no WhatsApp, envie link personalizado com ?phone=55...';
+      }
+    }
+
+    function normalizePhone(raw) {
+      const digits = String(raw || '').replace(/\D/g, '');
+      if (!digits) return '';
+      return digits.startsWith('55') ? digits : ('55' + digits);
+    }
+
+    function validateStep1() {
+      const guestPhone = document.getElementById('guestPhone').value.trim();
+      const guestName = document.getElementById('guestName').value.trim();
+      const roomNumber = document.getElementById('roomNumber').value.trim();
+      if (!guestPhone) return 'Informe o WhatsApp.';
+      if (!guestName) return 'Informe o nome.';
+      if (!roomNumber) return 'Informe o número do quarto.';
+      if (!/^\d{1,4}$/.test(roomNumber)) return 'Quarto inválido. Use apenas números (ex.: 12).';
+      return null;
+    }
+
+    async function ensureAccessToken(guestPhone, forceRefresh = false) {
+      if (state.accessToken && !forceRefresh) return state.accessToken;
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.rpc('issue_order_access_token_public', { p_phone_raw: guestPhone });
+      if (error) throw new Error(error.message || 'Falha ao gerar token de acesso');
+      if (data?.error) throw new Error(data.message || 'Falha ao gerar token de acesso');
+      state.accessToken = data?.accessToken || '';
+      if (!state.accessToken) throw new Error('Token não retornado pelo servidor');
+      return state.accessToken;
+    }
+
+    function renderServices() {
+      const root = document.getElementById('services');
+      root.innerHTML = '';
+      services.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'service';
+        div.innerHTML = `
+          <div class="top"><strong>${s.name}</strong><strong>${currency(s.price)}</strong></div>
+          <small>${s.desc}</small>
+          <button class="btn-primary" data-id="${s.id}">Adicionar</button>
+        `;
+        div.querySelector('button').onclick = () => {
+          addItem({
+            type: 'servico',
+            id: `${s.id}-${Date.now()}`,
+            title: s.name,
+            detail: `${s.desc} • ${state.guest.guestName} (Quarto ${state.guest.roomNumber})`,
+            qty: 1,
+            unitPrice: s.price
+          });
+        };
+        root.appendChild(div);
+      });
+    }
+
+    function getAvailableSpots(size, startDate, endDate) {
+      const occupied = new Set(
+        state.parkingBookings
+          .filter(b => b.size === size && overlaps(startDate, endDate, b.startDate, b.endDate))
+          .map(b => b.spot)
+      );
+      return parkingLots[size].filter(s => !occupied.has(s));
+    }
+
+    function refreshParkingUI() {
+      const startEl = document.getElementById('parkStartDate');
+      const endEl = document.getElementById('parkEndDate');
+      const start = startEl.value;
+      const end = endEl.value;
+      const size = document.getElementById('spotSize').value;
+      const gridEl = document.getElementById('parkingGrid');
+      const status = document.getElementById('parkingAvailability');
+      const nightsEl = document.getElementById('parkingNights');
+
+      if (start) {
+        endEl.min = start;
+        if (end && daysBetween(start, end) <= 0) {
+          const corrected = new Date(dateOnly(start).getTime() + 86400000).toISOString().slice(0, 10);
+          endEl.value = corrected;
+        }
+      }
+
+      const currentEnd = endEl.value;
+      if (!start || !currentEnd || daysBetween(start, currentEnd) <= 0) {
+        gridEl.innerHTML = '';
+        state.selectedParkingSpot = '';
+        status.textContent = 'Defina check-in/check-out válidos.';
+        nightsEl.textContent = '';
+        return;
+      }
+
+      const nights = daysBetween(start, currentEnd);
+      nightsEl.textContent = `Período selecionado: ${nights} diária${nights > 1 ? 's' : ''}`;
+
+      if (!size) {
+        gridEl.innerHTML = '';
+        state.selectedParkingSpot = '';
+        status.textContent = 'Selecione o tipo de vaga para visualizar as opções.';
+        return;
+      }
+
+      const available = new Set(getAvailableSpots(size, start, currentEnd));
+      const allByType = parkingLots[size] || [];
+
+      if (state.selectedParkingSpot && !available.has(state.selectedParkingSpot)) {
+        state.selectedParkingSpot = '';
+      }
+
+      gridEl.innerHTML = allByType.map(spot => {
+        const isAvailable = available.has(spot);
+        const isSelected = state.selectedParkingSpot === spot;
+        const klass = isSelected ? 'parking-seat selected' : (isAvailable ? 'parking-seat available' : 'parking-seat unavailable');
+        return `<button type="button" class="${klass}" data-spot="${spot}" ${isAvailable ? '' : 'disabled'}>${spot}</button>`;
+      }).join('');
+
+      gridEl.querySelectorAll('[data-spot]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.selectedParkingSpot = btn.dataset.spot;
+          refreshParkingUI();
+        });
+      });
+
+      const padrao = getAvailableSpots('padrao', start, currentEnd).length;
+      const grande = getAvailableSpots('grande', start, currentEnd).length;
+      const sel = state.selectedParkingSpot ? ` • Selecionada: ${state.selectedParkingSpot}` : '';
+      status.textContent = `Disponíveis no período → Padrão: ${padrao}/20 • Grande: ${grande}/10${sel}`;
+    }
+
+    function addParking() {
+      const start = document.getElementById('parkStartDate').value;
+      const end = document.getElementById('parkEndDate').value;
+      const size = document.getElementById('spotSize').value;
+      const spot = state.selectedParkingSpot;
+
+      if (!start || !end) return setStatus('Preencha as datas do estacionamento.', 'warn');
+      if (!size) return setStatus('Selecione o tipo de vaga.', 'warn');
+      const nights = daysBetween(start, end);
+      if (nights <= 0) return setStatus('Check-out deve ser maior que check-in.', 'warn');
+      if (!spot) return setStatus('Selecione uma vaga disponível.', 'warn');
+
+      const bookingId = `park-${Date.now()}`;
+      state.parkingBookings.push({ bookingId, startDate: start, endDate: end, size, spot });
+
+      addItem({
+        type: 'estacionamento',
+        id: bookingId,
+        bookingId,
+        title: `Estacionamento ${spot} (${size})`,
+        detail: `${start} → ${end} (${nights} diária${nights > 1 ? 's' : ''}) • Quarto ${state.guest.roomNumber}`,
+        qty: 1,
+        unitPrice: nights * parkingDailyPrice[size]
+      });
+
+      state.selectedParkingSpot = '';
+      refreshParkingUI();
+      setStatus('Estacionamento adicionado.', 'ok');
+    }
+
+    function addItem(item) {
+      state.cart.push(item);
+      state.serviceFeeApplied = false;
+      renderCart();
+      const fab = document.getElementById('fabCart');
+      fab.classList.add('bump');
+      setTimeout(() => fab.classList.remove('bump'), 220);
+    }
+
+    function removeItem(index) {
+      const item = state.cart[index];
+      if (item?.type === 'estacionamento') {
+        state.parkingBookings = state.parkingBookings.filter(b => b.bookingId !== item.bookingId);
+      }
+      state.cart.splice(index, 1);
+      state.serviceFeeApplied = false;
+      renderCart();
+      refreshParkingUI();
+    }
+
+    function renderCart() {
+      const root = document.getElementById('cart');
+      root.innerHTML = '';
+      if (!state.cart.length) {
+        root.innerHTML = '<p class="muted">Sem itens no carrinho.</p>';
+      } else {
+        state.cart.forEach((item, i) => {
+          const div = document.createElement('div');
+          div.className = 'cart-item';
+          div.innerHTML = `
+            <div>
+              <strong>${item.title}</strong>
+              <div class="muted" style="font-size:12px">${item.detail}</div>
+            </div>
+            <div style="text-align:right">
+              <strong>${currency(item.unitPrice)}</strong>
+              <button class="btn-danger" style="margin-top:5px;padding:5px 8px;font-size:12px" data-i="${i}">Remover</button>
+            </div>
+          `;
+          div.querySelector('button').onclick = () => removeItem(i);
+          root.appendChild(div);
+        });
+      }
+
+      const subtotal = state.cart.reduce((a, i) => a + i.unitPrice * i.qty, 0);
+      const fee = state.serviceFeeApplied ? subtotal * 0.10 : 0;
+      const total = subtotal + fee;
+      document.getElementById('subtotal').textContent = currency(subtotal);
+      document.getElementById('fee').textContent = state.serviceFeeApplied ? currency(fee) : '—';
+      document.getElementById('total').textContent = currency(total);
+      document.getElementById('feeLabel').textContent = state.serviceFeeApplied
+        ? 'Taxa serviço (10%)'
+        : 'Taxa serviço (calculada no fechamento)';
+
+      const fab = document.getElementById('fabCart');
+      fab.textContent = `Sacola (${state.cart.length}) • ${currency(total)}`;
+    }
+
+    function setStatus(msg, type = '') {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = type ? type : 'muted';
+    }
+
+    document.getElementById('continueBtn').onclick = async () => {
+      const err = validateStep1();
+      const s = document.getElementById('statusStep1');
+      if (err) {
+        s.textContent = err;
+        s.className = 'warn';
+        return;
+      }
+
+      state.guest = {
+        guestPhone: normalizePhone(document.getElementById('guestPhone').value.trim()),
+        guestName: document.getElementById('guestName').value.trim(),
+        roomNumber: document.getElementById('roomNumber').value.trim().replace(/\D/g, '')
+      };
+      localStorage.setItem('blue_marlin_phone', state.guest.guestPhone);
+
+      try {
+        await ensureAccessToken(state.guest.guestPhone, true);
+      } catch (e) {
+        s.textContent = `Falha ao preparar acesso: ${e.message}`;
+        s.className = 'warn';
+        return;
+      }
+
+      document.getElementById('guestHeader').textContent = `${state.guest.guestName} • Quarto ${state.guest.roomNumber} • WhatsApp ${state.guest.guestPhone}`;
+      document.getElementById('roomBadge').textContent = state.guest.roomNumber;
+      document.getElementById('screen1').classList.add('hidden');
+      document.getElementById('screen2').classList.remove('hidden');
+      document.getElementById('fabCart').classList.remove('hidden');
+      document.getElementById('mobileNav').classList.remove('hidden');
+      renderServices();
+    };
+
+    document.getElementById('addParking').onclick = addParking;
+    document.getElementById('clear').onclick = () => {
+      state.cart = [];
+      state.parkingBookings = [];
+      state.serviceFeeApplied = false;
+      renderCart();
+      refreshParkingUI();
+      setStatus('Carrinho limpo.');
+    };
+    document.getElementById('back').onclick = () => {
+      document.getElementById('screen2').classList.add('hidden');
+      document.getElementById('screen1').classList.remove('hidden');
+      document.getElementById('fabCart').classList.add('hidden');
+      document.getElementById('mobileNav').classList.add('hidden');
+    };
+
+    document.getElementById('backToOrders').onclick = () => {
+      document.getElementById('screen3').classList.add('hidden');
+      document.getElementById('screen2').classList.remove('hidden');
+      document.getElementById('fabCart').classList.remove('hidden');
+      document.getElementById('mobileNav').classList.remove('hidden');
+    };
+
+    document.getElementById('newOrder').onclick = () => {
+      state.cart = [];
+      state.parkingBookings = [];
+      state.serviceFeeApplied = false;
+      renderCart();
+      refreshParkingUI();
+      document.getElementById('screen3').classList.add('hidden');
+      document.getElementById('screen2').classList.remove('hidden');
+      document.getElementById('fabCart').classList.remove('hidden');
+      document.getElementById('mobileNav').classList.remove('hidden');
+      setStatus('Novo pedido iniciado.');
+    };
+
+    document.getElementById('checkout').onclick = async () => {
+      if (!state.cart.length) return setStatus('Adicione itens antes de finalizar.', 'warn');
+      if (!state.accessToken) {
+        try {
+          await ensureAccessToken(state.guest?.guestPhone || document.getElementById('guestPhone').value);
+        } catch (e) {
+          return setStatus(`Falha ao gerar token de segurança: ${e.message}`, 'warn');
+        }
+      }
+      state.serviceFeeApplied = true;
+      const subtotal = state.cart.reduce((a, i) => a + i.unitPrice * i.qty, 0);
+      const fee = subtotal * 0.10;
+      const payload = {
+        createdAt: new Date().toISOString(),
+        accessToken: state.accessToken,
+        guest: state.guest,
+        items: state.cart,
+        totals: { subtotal, fee, total: subtotal + fee }
+      };
+      renderCart();
+
+      try {
+        const saved = await saveOrderOnBackend(payload);
+        console.log('MVP_CHECKOUT', { payload, saved });
+
+        const msg = saved?.orderId
+          ? `Pedido #${saved.orderId.slice(0,8)} salvo com sucesso para o quarto ${state.guest.roomNumber}.`
+          : `Pedido realizado para o quarto ${state.guest.roomNumber} (modo demonstração).`;
+
+        document.getElementById('successText').textContent = msg;
+        document.getElementById('screen2').classList.add('hidden');
+        document.getElementById('screen3').classList.remove('hidden');
+        document.getElementById('fabCart').classList.add('hidden');
+        document.getElementById('mobileNav').classList.add('hidden');
+      } catch (err) {
+        setStatus(`Falha ao salvar pedido: ${err.message}`, 'warn');
+      }
+    };
+
+    ['parkStartDate', 'parkEndDate', 'spotSize'].forEach(id => {
+      document.getElementById(id).addEventListener('change', refreshParkingUI);
+    });
+
+    document.querySelectorAll('.chip[data-nights]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const nights = Number(btn.dataset.nights || '1');
+        const start = document.getElementById('parkStartDate').value;
+        if (!start) return;
+        const end = new Date(dateOnly(start).getTime() + nights * 86400000).toISOString().slice(0, 10);
+        document.getElementById('parkEndDate').value = end;
+        refreshParkingUI();
+      });
+    });
+
+    document.getElementById('cartToggle').onclick = () => {
+      const panel = document.getElementById('cartPanel');
+      panel.classList.toggle('collapsed');
+    };
+
+    document.getElementById('fabCart').onclick = () => {
+      document.getElementById('sec-cart').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('cartPanel').classList.remove('collapsed');
+    };
+
+    document.querySelectorAll('#mobileNav button[data-target]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.target;
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (id === 'sec-cart') document.getElementById('cartPanel').classList.remove('collapsed');
+      });
+    });
+
+    (function init() {
+      const now = new Date();
+      const today = now.toISOString().slice(0, 10);
+      const tomorrow = new Date(now.getTime() + 86400000);
+      const afterTomorrow = new Date(now.getTime() + 2 * 86400000);
+
+      const startEl = document.getElementById('parkStartDate');
+      const endEl = document.getElementById('parkEndDate');
+      startEl.min = today;
+      endEl.min = today;
+
+      startEl.value = tomorrow.toISOString().slice(0, 10);
+      endEl.value = afterTomorrow.toISOString().slice(0, 10);
+
+      applyBrandLogoFromLink();
+      prefillPhoneFromLink();
+      refreshParkingUI();
+      renderCart();
+
+      if (window.matchMedia('(max-width: 920px)').matches) {
+        document.getElementById('cartPanel').classList.add('collapsed');
+      }
+    })();
+  </script>
+</body>
+</html>
