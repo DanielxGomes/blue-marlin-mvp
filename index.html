@@ -503,7 +503,7 @@
     };
     const parkingDailyPrice = { padrao: 35, grande: 55 };
 
-    const state = { guest: null, cart: [], parkingBookings: [], serviceFeeApplied: false, accessToken: '', selectedParkingSpot: '' };
+    const state = { guest: null, cart: [], parkingBookings: [], serviceFeeApplied: false, accessToken: '', selectedParkingSpot: '', parkingServerReserved: { padrao: new Set(), grande: new Set() }, parkingLastFetchKey: '' };
 
     function showToast(message) {
       const t = document.getElementById('toast');
@@ -555,6 +555,18 @@
       } catch (_) {
         // telemetry nunca deve quebrar UX
       }
+    }
+
+
+    async function fetchParkingAvailability(startDate, endDate, size) {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.rpc('get_parking_availability_public', {
+        p_start: startDate,
+        p_end: endDate,
+        p_size: size || null
+      });
+      if (error) throw error;
+      return data || { reserved: [], available: [] };
     }
 
     async function loadServicesCatalog() {
@@ -729,15 +741,17 @@
     }
 
     function getAvailableSpots(size, startDate, endDate) {
-      const occupied = new Set(
+      const occupiedLocal = new Set(
         state.parkingBookings
           .filter(b => b.size === size && overlaps(startDate, endDate, b.startDate, b.endDate))
           .map(b => b.spot)
       );
-      return parkingLots[size].filter(s => !occupied.has(s));
+      const occupiedServer = state.parkingServerReserved[size] || new Set();
+      return parkingLots[size].filter(sp => !occupiedLocal.has(sp) && !occupiedServer.has(sp));
     }
 
-    function refreshParkingUI() {
+    async function refreshParkingUI() {
+
       const startEl = document.getElementById('parkStartDate');
       const endEl = document.getElementById('parkEndDate');
       const start = startEl.value;
@@ -772,6 +786,18 @@
         state.selectedParkingSpot = '';
         status.textContent = 'Selecione o tipo de vaga para visualizar as opções.';
         return;
+      }
+
+      const fetchKey = `${start}|${currentEnd}|${size}`;
+      if (state.parkingLastFetchKey !== fetchKey) {
+        try {
+          const availability = await fetchParkingAvailability(start, currentEnd, size);
+          const reserved = Array.isArray(availability?.reserved) ? availability.reserved : [];
+          state.parkingServerReserved[size] = new Set(reserved);
+          state.parkingLastFetchKey = fetchKey;
+        } catch (e) {
+          console.warn('Falha ao consultar disponibilidade real:', e?.message || e);
+        }
       }
 
       const available = new Set(getAvailableSpots(size, start, currentEnd));
@@ -823,7 +849,12 @@
         title: `Estacionamento ${spot} (${size})`,
         detail: `${start} → ${end} (${nights} diária${nights > 1 ? 's' : ''}) • Quarto ${state.guest.roomNumber}`,
         qty: 1,
-        unitPrice: nights * parkingDailyPrice[size]
+        unitPrice: nights * parkingDailyPrice[size],
+        spot,
+        startDate: start,
+        endDate: end,
+        size,
+        nights
       });
 
       state.selectedParkingSpot = '';
@@ -1013,7 +1044,7 @@
     };
 
     ['parkStartDate', 'parkEndDate', 'spotSize'].forEach(id => {
-      document.getElementById(id).addEventListener('change', refreshParkingUI);
+      document.getElementById(id).addEventListener('change', () => { state.parkingLastFetchKey = ''; refreshParkingUI(); });
     });
 
     document.querySelectorAll('.chip[data-nights]').forEach(btn => {

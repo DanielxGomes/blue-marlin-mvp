@@ -7,22 +7,27 @@
   <title>Blue Marlin • Admin Catálogo</title>
   <style>
     body{margin:0;font-family:Inter,system-ui;background:#0b1020;color:#e7ecff}
-    .wrap{max-width:980px;margin:0 auto;padding:18px}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
     .card{background:#121a33;border:1px solid #243058;border-radius:14px;padding:14px;margin-bottom:12px}
     input,button{border-radius:10px;border:1px solid #2e3c6e;background:#101833;color:#e7ecff;padding:10px}
     button{cursor:pointer;background:#3b82f6;border:none;font-weight:700}
     table{width:100%;border-collapse:collapse}
     th,td{padding:10px;border-bottom:1px solid #28335f;text-align:left}
-    .row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px}
+    .row{display:grid;grid-template-columns:2fr 2fr auto;gap:8px}
+    .row4{display:grid;grid-template-columns:1fr 2fr 1fr auto auto;gap:8px}
     .muted{color:#9aa9d6;font-size:12px}
+    .danger{background:#ef4444}
+    .ghost{background:#1f2a4d}
+    .hidden{display:none}
   </style>
 </head>
 <body>
 <div class="wrap">
   <h2>Blue Marlin • Admin Catálogo</h2>
-  <div class="card">
-    <p class="muted">Login Supabase (usuário com permissão para editar <code>services_catalog</code>).</p>
-    <div class="row" style="grid-template-columns:2fr 2fr auto">
+
+  <div id="loginCard" class="card">
+    <p class="muted">Acesso restrito. Entre com login e senha para gerenciar catálogo.</p>
+    <div class="row">
       <input id="email" placeholder="email" />
       <input id="pass" type="password" placeholder="senha" />
       <button id="login">Entrar</button>
@@ -30,22 +35,33 @@
     <p id="authStatus" class="muted"></p>
   </div>
 
-  <div class="card">
-    <h3>Novo serviço</h3>
-    <div class="row">
-      <input id="code" placeholder="codigo (ex: cafe_manha)" />
-      <input id="name" placeholder="nome" />
-      <input id="price" type="number" step="0.01" placeholder="preço" />
-      <button id="add">Adicionar</button>
+  <div id="adminPanel" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <strong>Painel autenticado</strong>
+        <button id="logout" class="ghost">Sair</button>
+      </div>
+      <p class="muted">Você pode adicionar, editar, ativar/desativar e remover serviços/produtos.</p>
     </div>
-  </div>
 
-  <div class="card">
-    <h3>Catálogo atual</h3>
-    <table>
-      <thead><tr><th>Código</th><th>Nome</th><th>Preço</th><th>Ativo</th></tr></thead>
-      <tbody id="rows"></tbody>
-    </table>
+    <div class="card">
+      <h3>Novo item de catálogo</h3>
+      <div class="row4">
+        <input id="code" placeholder="codigo (ex: cafe_manha)" />
+        <input id="name" placeholder="nome" />
+        <input id="price" type="number" step="0.01" placeholder="preço" />
+        <button id="add">Adicionar</button>
+        <button id="refresh" class="ghost">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Catálogo atual</h3>
+      <table>
+        <thead><tr><th>Código</th><th>Nome</th><th>Preço</th><th>Ativo</th><th>Ações</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 <script>
@@ -53,11 +69,30 @@
   const DEFAULT_SUPABASE_KEY = 'sb_publishable_5A_qAkNtIqRTLOE21y0crw_k5gBJjqS';
   const supabase = window.supabase.createClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY);
 
+  function fmt(v){ return `R$ ${Number(v||0).toFixed(2)}`; }
+
+  function setLoggedInUI(isAuth){
+    document.getElementById('loginCard').classList.toggle('hidden', isAuth);
+    document.getElementById('adminPanel').classList.toggle('hidden', !isAuth);
+  }
+
   async function load(){
     const {data,error}=await supabase.from('services_catalog').select('id,code,name,unit_price,active').order('name');
     const tb=document.getElementById('rows');
-    if(error){ tb.innerHTML=`<tr><td colspan="4">Erro: ${error.message}</td></tr>`; return; }
-    tb.innerHTML=(data||[]).map(r=>`<tr><td>${r.code}</td><td>${r.name}</td><td>R$ ${Number(r.unit_price).toFixed(2)}</td><td><input type='checkbox' ${r.active?'checked':''} onchange='toggleActive("${r.id}",this.checked)' /></td></tr>`).join('');
+    if(error){ tb.innerHTML=`<tr><td colspan="5">Erro: ${error.message}</td></tr>`; return; }
+    tb.innerHTML=(data||[]).map(r=>`<tr>
+      <td><input value="${r.code}" onchange="editField('${r.id}','code',this.value)" /></td>
+      <td><input value="${r.name}" onchange="editField('${r.id}','name',this.value)" /></td>
+      <td><input type="number" step="0.01" value="${Number(r.unit_price)}" onchange="editField('${r.id}','unit_price',this.value)" /></td>
+      <td><input type='checkbox' ${r.active?'checked':''} onchange="toggleActive('${r.id}',this.checked)" /></td>
+      <td><button class='danger' onclick="removeItem('${r.id}')">Remover</button></td>
+    </tr>`).join('');
+  }
+
+  async function editField(id,field,value){
+    const payload={}; payload[field]=field==='unit_price'?Number(value||0):String(value||'').trim();
+    const {error}=await supabase.from('services_catalog').update(payload).eq('id',id);
+    if(error) alert(error.message);
   }
 
   async function toggleActive(id,active){
@@ -65,14 +100,29 @@
     if(error) alert(error.message);
     await load();
   }
+
+  async function removeItem(id){
+    if(!confirm('Remover item do catálogo?')) return;
+    const {error}=await supabase.from('services_catalog').delete().eq('id',id);
+    if(error) alert(error.message);
+    await load();
+  }
+
+  window.editField=editField;
   window.toggleActive=toggleActive;
+  window.removeItem=removeItem;
 
   document.getElementById('login').onclick=async()=>{
     const email=document.getElementById('email').value.trim();
     const password=document.getElementById('pass').value;
     const {error}=await supabase.auth.signInWithPassword({email,password});
     document.getElementById('authStatus').textContent=error?`Falha: ${error.message}`:'Autenticado';
-    if(!error) load();
+    if(!error){ setLoggedInUI(true); load(); }
+  };
+
+  document.getElementById('logout').onclick=async()=>{
+    await supabase.auth.signOut();
+    setLoggedInUI(false);
   };
 
   document.getElementById('add').onclick=async()=>{
@@ -84,10 +134,20 @@
     };
     const {error}=await supabase.from('services_catalog').insert(payload);
     if(error) return alert(error.message);
+    document.getElementById('code').value='';
+    document.getElementById('name').value='';
+    document.getElementById('price').value='';
     await load();
   };
 
-  load();
+  document.getElementById('refresh').onclick=load;
+
+  (async()=>{
+    const { data } = await supabase.auth.getSession();
+    const isAuth = !!data?.session;
+    setLoggedInUI(isAuth);
+    if(isAuth) load();
+  })();
 </script>
 </body>
 </html>
