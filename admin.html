@@ -35,6 +35,8 @@
     <p id="authStatus" class="muted"></p>
   </div>
 
+  <div id="denied" class="card hidden"><strong>Acesso negado</strong><p class="muted">Seu usuário não está na lista de administradores do catálogo.</p></div>
+
   <div id="adminPanel" class="hidden">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
@@ -71,9 +73,16 @@
 
   function fmt(v){ return `R$ ${Number(v||0).toFixed(2)}`; }
 
-  function setLoggedInUI(isAuth){
+  function setLoggedInUI(isAuth, isAdmin=false){
     document.getElementById('loginCard').classList.toggle('hidden', isAuth);
-    document.getElementById('adminPanel').classList.toggle('hidden', !isAuth);
+    document.getElementById('adminPanel').classList.toggle('hidden', !(isAuth && isAdmin));
+    document.getElementById('denied').classList.toggle('hidden', !(isAuth && !isAdmin));
+  }
+
+  async function checkAdminAccess(){
+    const { data, error } = await supabase.rpc('is_admin_panel_access');
+    if (error) return false;
+    return !!data?.is_admin;
   }
 
   async function load(){
@@ -117,12 +126,12 @@
     const password=document.getElementById('pass').value;
     const {error}=await supabase.auth.signInWithPassword({email,password});
     document.getElementById('authStatus').textContent=error?`Falha: ${error.message}`:'Autenticado';
-    if(!error){ setLoggedInUI(true); load(); }
+    if(!error){ const isAdmin = await checkAdminAccess(); setLoggedInUI(true, isAdmin); if(isAdmin) load(); }
   };
 
   document.getElementById('logout').onclick=async()=>{
     await supabase.auth.signOut();
-    setLoggedInUI(false);
+    setLoggedInUI(false,false);
   };
 
   document.getElementById('add').onclick=async()=>{
@@ -145,8 +154,7 @@
   (async()=>{
     const { data } = await supabase.auth.getSession();
     const isAuth = !!data?.session;
-    setLoggedInUI(isAuth);
-    if(isAuth) load();
+    if(isAuth){ const isAdmin = await checkAdminAccess(); setLoggedInUI(true, isAdmin); if(isAdmin) load(); } else { setLoggedInUI(false,false); }
   })();
 </script>
 </body>
