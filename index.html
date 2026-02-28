@@ -316,6 +316,11 @@
       #screen2 aside.card { position: static; max-height: none; }
     }
 
+
+    #agendaModal{position:fixed;inset:0;background:rgba(5,10,22,.8);z-index:90;display:none;align-items:center;justify-content:center;padding:10px}
+    #agendaModal .box{width:min(980px,96vw);height:min(92vh,920px);background:#0d152f;border:1px solid #2b3c6c;border-radius:12px;overflow:hidden}
+    #agendaModal iframe{width:100%;height:calc(100% - 44px);border:0;background:#0b1020}
+    #agendaModal .hd{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 10px;color:#fff;background:#121a33;border-bottom:1px solid #2b3c6c}
   </style>
 </head>
 <body>
@@ -464,6 +469,16 @@
         <button id="backToOrders" class="btn-ghost">Voltar para pedidos</button>
       </div>
     </section>
+  </div>
+
+  <div id="agendaModal">
+    <div class="box">
+      <div class="hd">
+        <strong>Agenda Operacional Blue Marlin</strong>
+        <button id="closeAgendaModal" class="btn-secondary" style="width:auto;padding:6px 10px">Fechar</button>
+      </div>
+      <iframe src="agenda.html"></iframe>
+    </div>
   </div>
 
   <div id="toast" class="toast"></div>
@@ -1103,5 +1118,5 @@
       }
     })();
   </script>
-<div style='position:fixed;right:12px;bottom:12px;z-index:60'><a href='agenda.html' style='display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:10px 12px;border-radius:10px;font:600 13px Inter,sans-serif'>Abrir Agenda</a></div></body>
+</body>
 </html>

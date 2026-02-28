@@ -51,7 +51,7 @@
         <option value="opt_03">Opção 03</option>
       </select>
       <input id="people" type="number" min="1" placeholder="Nº pessoas (obrigatório p/ café)"/>
-      <input id="plate" placeholder="Placa (estacionamento)"/>
+      <input id="plate" placeholder="Placa (estacionamento) ex: ABC1D23"/>
       <select id="spotType">
         <option value="">Tipo de vaga</option>
         <option value="padrao">Pequena / padrão</option>
@@ -64,7 +64,7 @@
     <div class="row" style="margin-top:8px">
       <button id="create">Confirmar agendamento</button>
     </div>
-    <pre id="result" class="muted"></pre>
+    <pre id="result" class="muted"></pre><div id="parkingCard" class="card" style="display:none;margin-top:10px"><h4>Cartão de vaga</h4><pre id="parkingCardData" class="muted"></pre><img id="parkingQr" alt="QR" style="max-width:220px;border-radius:8px;border:1px solid #2a3a66"/></div>
   </div>
 </div>
 <script>
@@ -120,6 +120,7 @@ document.getElementById('create').onclick=async()=>{
     : [cached.date];
 
   const out=[];
+  let preferredSpotCode = null;
   for(const d of dates){
     const body={
       p_establishment_code:'blue-marlin',
@@ -133,10 +134,15 @@ document.getElementById('create').onclick=async()=>{
       p_notes:notes,
       p_same_staff:sameStaff,
       p_plate:plate,
-      p_spot_type:spotType
+      p_spot_type:spotType,
+      p_preferred_spot_code: preferredSpotCode
     };
     const r=await callRpc('create_service_booking_public',body);
-    out.push({date:d,response:r.data,status:r.status,ok:r.ok && !r.data?.error});
+    const ok = r.ok && !r.data?.error;
+    if(ok && cached.service==='estacionamento' && r.data?.parking?.spot_code){
+      preferredSpotCode = r.data.parking.spot_code;
+    }
+    out.push({date:d,response:r.data,status:r.status,ok});
   }
 
   const okOnly=out.filter(x=>x.ok);
