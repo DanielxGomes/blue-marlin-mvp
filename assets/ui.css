@@ -1,0 +1,109 @@
+:root {
+  --bm-bg: #f3f7ff;
+  --bm-surface: #ffffff;
+  --bm-text: #0f172a;
+  --bm-muted: #5b6b87;
+  --bm-primary: #0b66ff;
+  --bm-primary-2: #11a6cc;
+  --bm-border: #dbe6fb;
+
+  --sl-color-primary-50: #ebf3ff;
+  --sl-color-primary-100: #d9e8ff;
+  --sl-color-primary-200: #b6d2ff;
+  --sl-color-primary-300: #8db8ff;
+  --sl-color-primary-400: #5e99ff;
+  --sl-color-primary-500: #2f7cff;
+  --sl-color-primary-600: #0b66ff;
+  --sl-color-primary-700: #0452d6;
+  --sl-color-primary-800: #0745ad;
+  --sl-color-primary-900: #0b3f8a;
+
+  --sl-border-radius-small: 10px;
+  --sl-border-radius-medium: 14px;
+  --sl-border-radius-large: 16px;
+  --sl-font-sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 10% -20%, rgba(11, 102, 255, .10), transparent 60%),
+    radial-gradient(1000px 450px at 90% -10%, rgba(17, 166, 204, .12), transparent 60%),
+    var(--bm-bg);
+  color: var(--bm-text);
+}
+
+.brand,
+.card,
+.service,
+#agendaModal .box {
+  border-radius: 14px !important;
+  border: 1px solid var(--bm-border) !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .06) !important;
+}
+
+.brand {
+  background: color-mix(in srgb, var(--bm-surface) 92%, #eaf2ff 8%);
+}
+
+.muted { color: var(--bm-muted) !important; }
+
+.header-controls { display: flex; align-items: center; gap: 10px; }
+
+sl-input::part(base),
+sl-select::part(combobox),
+sl-textarea::part(base) {
+  border-color: var(--bm-border);
+  background: #fff;
+}
+
+sl-input::part(base):focus-within,
+sl-select::part(combobox):focus-within,
+sl-textarea::part(base):focus-within {
+  border-color: var(--sl-color-primary-500);
+  box-shadow: 0 0 0 3px rgba(47,124,255,.16);
+}
+
+sl-button[variant='primary']::part(base) {
+  box-shadow: 0 8px 18px rgba(11,102,255,.25);
+}
+
+.btn-secondary,
+sl-button[variant='default']::part(base) {
+  border: 1px solid var(--bm-border);
+}
+
+.bottom-nav {
+  background: color-mix(in srgb, #fff 96%, #eaf2ff 4%) !important;
+  border-top-color: var(--bm-border) !important;
+  backdrop-filter: blur(8px);
+}
+
+.bottom-nav [data-target] {
+  border: 1px solid var(--bm-border) !important;
+}
+
+/* Dark mode */
+html[data-theme='dark'] {
+  --bm-bg: #060b16;
+  --bm-surface: #0f172a;
+  --bm-text: #e2e8f0;
+  --bm-muted: #9fb2cf;
+  --bm-border: #22314f;
+}
+
+html[data-theme='dark'] body {
+  color: var(--bm-text);
+}
+
+html[data-theme='dark'] .brand,
+html[data-theme='dark'] .card,
+html[data-theme='dark'] .service,
+html[data-theme='dark'] #agendaModal .box {
+  background: #0f172a !important;
+  border-color: var(--bm-border) !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,.35) !important;
+}
+
+html[data-theme='dark'] .bottom-nav {
+  background: #0f172a !important;
+}

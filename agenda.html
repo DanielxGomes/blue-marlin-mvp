@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link id="sl-theme" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/themes/light.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/shoelace.js"></script>
+  <link rel="stylesheet" href="assets/ui.css">
+  <script defer src="assets/ui.js"></script>
   <title>Blue Marlin • Agenda de Serviços</title>
   <style>
     body{margin:0;font-family:Inter,system-ui;background:#0b1020;color:#eaf0ff}
@@ -19,50 +23,49 @@
 </head>
 <body>
 <div class="wrap">
-  <h2>📅 Agenda de Serviços • Blue Marlin</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>📅 Agenda de Serviços • Blue Marlin</h2><sl-switch id="themeToggle" size="small">Dark</sl-switch></div>
   <p class="muted">Janela ativa: 24-48h antes do check-in | Cutoff: 17h do dia anterior.</p>
 
   <div class="card">
     <h3>Identificação da reserva</h3>
     <div class="grid">
-      <input id="phone" placeholder="WhatsApp (ex: 11999990001)"/>
-      <input id="email" placeholder="E-mail (opcional)"/>
-      <select id="service">
-        <option value="arrumacao_quarto">Arrumação de quarto</option>
-        <option value="cafe_manha">Café da manhã</option>
-        <option value="estacionamento">Estacionamento</option>
-      </select>
-      <input id="date" type="date"/>
+      <sl-input id="phone" placeholder="WhatsApp (ex: 11999990001)"></sl-input>
+      <sl-input id="email" placeholder="E-mail (opcional)"></sl-input>
+      <sl-select id="service">
+        <sl-option value="arrumacao_quarto">Arrumação de quarto</sl-option>
+        <sl-option value="cafe_manha">Café da manhã</sl-option>
+        <sl-option value="estacionamento">Estacionamento</sl-option>
+      </sl-select>
+      <sl-input id="date" type="date"></sl-input>
     </div>
     <div class="row" style="margin-top:8px">
-      <button id="check">Consultar disponibilidade</button>
+      <sl-button id="check" variant="primary">Consultar disponibilidade</sl-button>
     </div>
-    <p id="status" class="muted"></p>
+    <div id="statusWrap"></div><p id="status" class="muted"></p>
   </div>
 
   <div id="bookingCard" class="card" style="display:none">
     <h3>Agendar</h3>
     <p id="resInfo" class="muted"></p>
     <div class="grid">
-      <select id="slot"></select>
-      <select id="option">
-        <option value="opt_01">Opção 01</option>
-        <option value="opt_02">Opção 02</option>
-        <option value="opt_03">Opção 03</option>
-      </select>
-      <input id="people" type="number" min="1" placeholder="Nº pessoas (obrigatório p/ café)"/>
-      <input id="plate" placeholder="Placa (estacionamento) ex: ABC1D23"/>
-      <select id="spotType">
-        <option value="">Tipo de vaga</option>
-        <option value="padrao">Pequena / padrão</option>
-        <option value="grande">Grande</option>
-      </select>
-      <label class="row" style="justify-content:flex-start"><input id="sameStaff" type="checkbox" style="width:auto"/> Mesma pessoa no serviço</label>
-      <label class="row" style="justify-content:flex-start"><input id="allDays" type="checkbox" style="width:auto"/> Aplicar para todos os dias da hospedagem</label>
-      <textarea id="notes" placeholder="Observações"></textarea>
+      <sl-select id="slot"></sl-select>
+      <sl-select id="option">
+        <sl-option value="opt_01">Opção 01</sl-option>
+        <sl-option value="opt_02">Opção 02</sl-option>
+        <sl-option value="opt_03">Opção 03</sl-option>
+      </sl-select>
+      <sl-input id="people" type="number" min="1" placeholder="Nº pessoas (obrigatório p/ café)"></sl-input>
+      <sl-input id="plate" placeholder="Placa (estacionamento) ex: ABC1D23"></sl-input>
+      <sl-select id="spotType" placeholder="Tipo de vaga">
+        <sl-option value="padrao">Pequena / padrão</sl-option>
+        <sl-option value="grande">Grande</sl-option>
+      </sl-select>
+      <label class="row" style="justify-content:flex-start"><sl-checkbox id="sameStaff">Mesma pessoa no serviço</sl-checkbox></label>
+      <label class="row" style="justify-content:flex-start"><sl-checkbox id="allDays">Aplicar para todos os dias da hospedagem</sl-checkbox></label>
+      <sl-textarea id="notes" placeholder="Observações"></sl-textarea>
     </div>
     <div class="row" style="margin-top:8px">
-      <button id="create">Confirmar agendamento</button>
+      <sl-button id="create" variant="primary">Confirmar agendamento</sl-button>
     </div>
     <pre id="result" class="muted"></pre><div id="parkingCard" class="card" style="display:none;margin-top:10px"><h4>Cartão de vaga</h4><pre id="parkingCardData" class="muted"></pre><img id="parkingQr" alt="QR" style="max-width:220px;border-radius:8px;border:1px solid #2a3a66"/></div>
   </div>
@@ -72,8 +75,9 @@ const URL='https://adifcdvlglntjutalbwk.supabase.co';
 const KEY='sb_publishable_5A_qAkNtIqRTLOE21y0crw_k5gBJjqS';
 const H={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
 let cached=null;
+if (window.initThemeToggle) window.initThemeToggle();
 
-function setStatus(msg,cls='muted'){const s=document.getElementById('status'); s.textContent=msg; s.className=cls;}
+function setStatus(msg,cls='muted'){const s=document.getElementById('status'); s.textContent=msg; s.className=cls; const w=document.getElementById('statusWrap'); if(w){ let v='primary'; if(cls==='ok') v='success'; if(cls==='warn') v='warning'; if(cls==='err') v='danger'; w.innerHTML = msg ? `<sl-alert open variant="${v}">${msg}</sl-alert>` : ''; }}
 function daysBetween(start,end){
   const out=[]; const d=new Date(start+'T00:00:00'); const e=new Date(end+'T00:00:00');
   while(d<e){ out.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); }
@@ -98,7 +102,7 @@ document.getElementById('check').onclick=async()=>{
   cached={...res.data,phone:p,email:e,service,date};
   const slots=res.data.slots||[];
   const sel=document.getElementById('slot');
-  sel.innerHTML=slots.map(s=>`<option value="${s.slot_id}">${s.start_time}${s.end_time?(' - '+s.end_time):''} (ocupado: ${s.booked_count})</option>`).join('');
+  sel.innerHTML=slots.map(s=>`<sl-option value="${s.slot_id}">${s.start_time}${s.end_time?(' - '+s.end_time):''} (ocupado: ${s.booked_count})</sl-option>`).join('');
   document.getElementById('resInfo').textContent=`Reserva: ${res.data.reservation.checkin_date} até ${res.data.reservation.checkout_date} | Quarto ${res.data.reservation.room_number||'-'} | Adultos ${res.data.reservation.adults}`;
   document.getElementById('bookingCard').style.display='block';
   setStatus('Disponibilidade carregada.','ok');

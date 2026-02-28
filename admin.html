@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link id="sl-theme" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/themes/light.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/shoelace.js"></script>
+  <link rel="stylesheet" href="assets/ui.css">
+  <script defer src="assets/ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <title>Blue Marlin • Admin Catálogo</title>
   <style>
@@ -23,14 +27,14 @@
 </head>
 <body>
 <div class="wrap">
-  <h2>Blue Marlin • Admin Catálogo</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>Blue Marlin • Admin Catálogo</h2><sl-switch id="themeToggle" size="small">Dark</sl-switch></div>
 
   <div id="loginCard" class="card">
     <p class="muted">Acesso restrito. Entre com login e senha para gerenciar catálogo.</p>
     <div class="row">
-      <input id="email" placeholder="email" />
-      <input id="pass" type="password" placeholder="senha" />
-      <button id="login">Entrar</button>
+      <sl-input id="email" placeholder="email"></sl-input>
+      <sl-input id="pass" type="password" placeholder="senha"></sl-input>
+      <sl-button id="login" variant="primary">Entrar</sl-button>
     </div>
     <p id="authStatus" class="muted"></p>
   </div>
@@ -41,7 +45,7 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <strong>Painel autenticado</strong>
-        <button id="logout" class="ghost">Sair</button>
+        <sl-button id="logout" variant="default">Sair</sl-button>
       </div>
       <p class="muted">Você pode adicionar, editar, ativar/desativar e remover serviços/produtos.</p>
     </div>
@@ -49,11 +53,11 @@
     <div class="card">
       <h3>Novo item de catálogo</h3>
       <div class="row4">
-        <input id="code" placeholder="codigo (ex: cafe_manha)" />
-        <input id="name" placeholder="nome" />
-        <input id="price" type="number" step="0.01" placeholder="preço" />
-        <button id="add">Adicionar</button>
-        <button id="refresh" class="ghost">Atualizar</button>
+        <sl-input id="code" placeholder="codigo (ex: cafe_manha)"></sl-input>
+        <sl-input id="name" placeholder="nome"></sl-input>
+        <sl-input id="price" type="number" step="0.01" placeholder="preço"></sl-input>
+        <sl-button id="add" variant="primary">Adicionar</sl-button>
+        <sl-button id="refresh" variant="default">Atualizar</sl-button>
       </div>
     </div>
 
@@ -94,7 +98,7 @@
       <td><input value="${r.name}" onchange="editField('${r.id}','name',this.value)" /></td>
       <td><input type="number" step="0.01" value="${Number(r.unit_price)}" onchange="editField('${r.id}','unit_price',this.value)" /></td>
       <td><input type='checkbox' ${r.active?'checked':''} onchange="toggleActive('${r.id}',this.checked)" /></td>
-      <td><button class='danger' onclick="removeItem('${r.id}')">Remover</button></td>
+      <td><sl-button variant='danger' size='small' onclick="removeItem('${r.id}')">Remover</sl-button></td>
     </tr>`).join('');
   }
 
@@ -150,6 +154,8 @@
   };
 
   document.getElementById('refresh').onclick=load;
+
+  if (window.initThemeToggle) window.initThemeToggle();
 
   (async()=>{
     const { data } = await supabase.auth.getSession();

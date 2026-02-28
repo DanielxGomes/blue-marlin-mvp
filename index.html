@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="format-detection" content="telephone=no" />
+  <link id="sl-theme" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/themes/light.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/shoelace.js"></script>
+  <link rel="stylesheet" href="assets/ui.css">
+  <script defer src="assets/ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <title>Blue Marlin Stay • Pedidos & Serviços</title>
   <style>
@@ -337,7 +341,7 @@
           <div class="muted">Pedido digital de produtos e serviços • experiência otimizada</div>
         </div>
       </div>
-      <span class="pill">Sistema • v1</span>
+      <div class="header-controls"><span class="pill">Sistema • v1</span><sl-switch id="themeToggle" size="small">Dark</sl-switch></div>
     </header>
 
     <section id="screen1" class="card">
@@ -352,21 +356,21 @@
       <div class="grid-3">
         <div>
           <label>Telefone WhatsApp</label>
-          <input id="guestPhone" type="text" placeholder="Ex.: 5551999990000" />
+          <sl-input id="guestPhone" type="text" placeholder="Ex.: 5551999990000"></sl-input>
           <p id="phoneHint" class="muted" style="font-size:11px;margin:6px 0 0">Dica: o link personalizado preenche este campo automaticamente.</p>
         </div>
         <div>
           <label>Nome do hóspede</label>
-          <input id="guestName" type="text" placeholder="Ex.: João Silva" />
+          <sl-input id="guestName" type="text" placeholder="Ex.: João Silva"></sl-input>
         </div>
         <div>
           <label>Número do quarto</label>
-          <input id="roomNumber" type="text" inputmode="numeric" maxlength="4" placeholder="Ex.: 12" />
+          <sl-input id="roomNumber" type="text" inputmode="numeric" maxlength="4" placeholder="Ex.: 12"></sl-input>
           <p class="muted" style="font-size:11px;margin:6px 0 0">Use apenas números (ex.: 12).</p>
         </div>
       </div>
 
-      <button id="continueBtn" class="btn-primary" style="margin-top:12px;">Continuar para pedidos</button>
+      <sl-button id="continueBtn" variant="primary" style="margin-top:12px;">Continuar para pedidos</sl-button>
       <p id="statusStep1" class="muted" style="margin-top:8px;font-size:12px"></p>
     </section>
 
@@ -389,11 +393,11 @@
             <div class="grid-2">
               <div>
                 <label>Check-in estacionamento</label>
-                <input id="parkStartDate" type="date" />
+                <sl-input id="parkStartDate" type="date"></sl-input>
               </div>
               <div>
                 <label>Check-out estacionamento</label>
-                <input id="parkEndDate" type="date" />
+                <sl-input id="parkEndDate" type="date"></sl-input>
               </div>
               <div style="grid-column:1 / -1;">
                 <label>Período rápido</label>
@@ -407,11 +411,10 @@
               </div>
               <div>
                 <label>Tipo de vaga</label>
-                <select id="spotSize">
-                  <option value="" selected>Selecionar tipo de vaga</option>
-                  <option value="padrao">Padrão</option>
-                  <option value="grande">Grande</option>
-                </select>
+                <sl-select id="spotSize" placeholder="Selecionar tipo de vaga">
+                  <sl-option value="padrao">Padrão</sl-option>
+                  <sl-option value="grande">Grande</sl-option>
+                </sl-select>
               </div>
               <div style="grid-column:1 / -1;">
                 <label>Escolha sua vaga</label>
@@ -420,7 +423,7 @@
               </div>
             </div>
             <p id="parkingAvailability" class="muted" style="margin:8px 0 0;font-size:12px"></p>
-            <button id="addParking" class="btn-primary" style="margin-top:10px;">Adicionar estacionamento</button>
+            <sl-button id="addParking" variant="primary" style="margin-top:10px;">Adicionar estacionamento</sl-button>
           </div>
         </div>
 
@@ -428,7 +431,7 @@
           <h3 style="margin:0">Sacola</h3>
           <p class="muted" style="margin:4px 0 10px">Quarto <strong id="roomBadge">-</strong></p>
 
-          <button id="cartToggle" class="btn-ghost cart-toggle">Ver/ocultar sacola</button>
+          <sl-button id="cartToggle" variant="default" class="cart-toggle">Ver/ocultar sacola</sl-button>
 
           <div id="cartPanel" class="cart-panel">
             <div id="cart"></div>
@@ -439,9 +442,9 @@
               <div class="row"><span>Total</span><strong id="total">R$ 0,00</strong></div>
             </div>
 
-            <button id="checkout" class="btn-primary" style="margin-top:10px;width:100%">Finalizar pedido</button>
-            <button id="clear" class="btn-ghost" style="margin-top:8px;width:100%">Limpar carrinho</button>
-            <button id="back" class="btn-ghost" style="margin-top:8px;width:100%">Voltar</button>
+            <sl-button id="checkout" variant="primary" style="margin-top:10px;width:100%">Finalizar pedido</sl-button>
+            <sl-button id="clear" variant="default" style="margin-top:8px;width:100%">Limpar carrinho</sl-button>
+            <sl-button id="back" variant="default" style="margin-top:8px;width:100%">Voltar</sl-button>
 
             <p id="status" class="muted"></p>
           </div>
@@ -465,8 +468,8 @@
       <h2 style="margin:0 0 6px">Pedido realizado com sucesso 🎉</h2>
       <p id="successText" class="muted" style="margin:0 0 12px"></p>
       <div class="grid-2">
-        <button id="newOrder" class="btn-primary">Fazer novo pedido</button>
-        <button id="backToOrders" class="btn-ghost">Voltar para pedidos</button>
+        <sl-button id="newOrder" variant="primary">Fazer novo pedido</sl-button>
+        <sl-button id="backToOrders" variant="default">Voltar para pedidos</sl-button>
       </div>
     </section>
   </div>
@@ -475,7 +478,7 @@
     <div class="box">
       <div class="hd">
         <strong>Agenda Operacional Blue Marlin</strong>
-        <button id="closeAgendaModal" class="btn-secondary" style="width:auto;padding:6px 10px">Fechar</button>
+        <sl-button id="closeAgendaModal" variant="default" style="width:auto;padding:6px 10px">Fechar</sl-button>
       </div>
       <iframe src="agenda.html"></iframe>
     </div>
@@ -520,7 +523,8 @@
 
     const state = { guest: null, cart: [], parkingBookings: [], serviceFeeApplied: false, accessToken: '', selectedParkingSpot: '', parkingServerReserved: { padrao: new Set(), grande: new Set() }, parkingLastFetchKey: '' };
 
-    function showToast(message) {
+    function showToast(message, variant='primary') {
+      if (window.uiToast) return window.uiToast(message, variant);
       const t = document.getElementById('toast');
       if (!t) return;
       t.textContent = message;
@@ -1083,7 +1087,7 @@
       document.getElementById('cartPanel').classList.remove('collapsed');
     };
 
-    document.querySelectorAll('#mobileNav button[data-target]').forEach(btn => {
+    document.querySelectorAll('#mobileNav [data-target]').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.target;
         const el = document.getElementById(id);
