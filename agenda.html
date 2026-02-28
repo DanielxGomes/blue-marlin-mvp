@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Blue Marlin • Agenda de Serviços</title>
+  <style>
+    body{margin:0;font-family:Inter,system-ui;background:#0b1020;color:#eaf0ff}
+    .wrap{max-width:980px;margin:0 auto;padding:16px}
+    .card{background:#121a33;border:1px solid #2a3a66;border-radius:14px;padding:14px;margin-bottom:12px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    @media (max-width:800px){.grid{grid-template-columns:1fr}}
+    input,select,button,textarea{width:100%;box-sizing:border-box;border-radius:10px;border:1px solid #35508c;background:#0e1630;color:#fff;padding:10px}
+    button{background:#4f46e5;border:none;font-weight:700;cursor:pointer}
+    .muted{opacity:.75;font-size:12px}
+    .ok{color:#34d399}.warn{color:#fbbf24}.err{color:#f87171}
+    .row{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h2>📅 Agenda de Serviços • Blue Marlin</h2>
+  <p class="muted">Janela ativa: 24-48h antes do check-in | Cutoff: 17h do dia anterior.</p>
+
+  <div class="card">
+    <h3>Identificação da reserva</h3>
+    <div class="grid">
+      <input id="phone" placeholder="WhatsApp (ex: 11999990001)"/>
+      <input id="email" placeholder="E-mail (opcional)"/>
+      <select id="service">
+        <option value="arrumacao_quarto">Arrumação de quarto</option>
+        <option value="cafe_manha">Café da manhã</option>
+        <option value="estacionamento">Estacionamento</option>
+      </select>
+      <input id="date" type="date"/>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="check">Consultar disponibilidade</button>
+    </div>
+    <p id="status" class="muted"></p>
+  </div>
+
+  <div id="bookingCard" class="card" style="display:none">
+    <h3>Agendar</h3>
+    <p id="resInfo" class="muted"></p>
+    <div class="grid">
+      <select id="slot"></select>
+      <select id="option">
+        <option value="opt_01">Opção 01</option>
+        <option value="opt_02">Opção 02</option>
+        <option value="opt_03">Opção 03</option>
+      </select>
+      <input id="people" type="number" min="1" placeholder="Nº pessoas (obrigatório p/ café)"/>
+      <input id="plate" placeholder="Placa (estacionamento)"/>
+      <select id="spotType">
+        <option value="">Tipo de vaga</option>
+        <option value="padrao">Pequena / padrão</option>
+        <option value="grande">Grande</option>
+      </select>
+      <label class="row" style="justify-content:flex-start"><input id="sameStaff" type="checkbox" style="width:auto"/> Mesma pessoa no serviço</label>
+      <label class="row" style="justify-content:flex-start"><input id="allDays" type="checkbox" style="width:auto"/> Aplicar para todos os dias da hospedagem</label>
+      <textarea id="notes" placeholder="Observações"></textarea>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="create">Confirmar agendamento</button>
+    </div>
+    <pre id="result" class="muted"></pre>
+  </div>
+</div>
+<script>
+const URL='https://adifcdvlglntjutalbwk.supabase.co';
+const KEY='sb_publishable_5A_qAkNtIqRTLOE21y0crw_k5gBJjqS';
+const H={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
+let cached=null;
+
+function setStatus(msg,cls='muted'){const s=document.getElementById('status'); s.textContent=msg; s.className=cls;}
+function daysBetween(start,end){
+  const out=[]; const d=new Date(start+'T00:00:00'); const e=new Date(end+'T00:00:00');
+  while(d<e){ out.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); }
+  return out;
+}
+
+async function callRpc(fn,body){
+  const r=await fetch(URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:H,body:JSON.stringify(body)});
+  const t=await r.text();
+  try{return {ok:r.ok,status:r.status,data:JSON.parse(t)}}catch{return {ok:r.ok,status:r.status,data:t}}
+}
+
+document.getElementById('check').onclick=async()=>{
+  const p=document.getElementById('phone').value.trim();
+  const e=document.getElementById('email').value.trim();
+  const service=document.getElementById('service').value;
+  const date=document.getElementById('date').value;
+  if(!p||!date){setStatus('Informe telefone e data.','err'); return;}
+  setStatus('Consultando...','muted');
+  const res=await callRpc('get_schedule_availability_public',{p_establishment_code:'blue-marlin',p_phone_raw:p,p_email:e,p_service_code:service,p_booking_date:date});
+  if(!res.ok || res.data?.error){setStatus('Falha: '+(res.data?.message||res.status),'err'); document.getElementById('bookingCard').style.display='none'; return;}
+  cached={...res.data,phone:p,email:e,service,date};
+  const slots=res.data.slots||[];
+  const sel=document.getElementById('slot');
+  sel.innerHTML=slots.map(s=>`<option value="${s.slot_id}">${s.start_time}${s.end_time?(' - '+s.end_time):''} (ocupado: ${s.booked_count})</option>`).join('');
+  document.getElementById('resInfo').textContent=`Reserva: ${res.data.reservation.checkin_date} até ${res.data.reservation.checkout_date} | Quarto ${res.data.reservation.room_number||'-'} | Adultos ${res.data.reservation.adults}`;
+  document.getElementById('bookingCard').style.display='block';
+  setStatus('Disponibilidade carregada.','ok');
+};
+
+document.getElementById('create').onclick=async()=>{
+  if(!cached){setStatus('Consulte disponibilidade antes.','warn'); return;}
+  const slot=document.getElementById('slot').value;
+  const option=document.getElementById('option').value;
+  const people=Number(document.getElementById('people').value||0) || null;
+  const notes=document.getElementById('notes').value.trim() || null;
+  const sameStaff=document.getElementById('sameStaff').checked;
+  const allDays=document.getElementById('allDays').checked;
+  const plate=document.getElementById('plate').value.trim()||null;
+  const spotType=document.getElementById('spotType').value||null;
+
+  const dates = allDays
+    ? daysBetween(cached.reservation.checkin_date, cached.reservation.checkout_date)
+    : [cached.date];
+
+  const out=[];
+  for(const d of dates){
+    const body={
+      p_establishment_code:'blue-marlin',
+      p_phone_raw:cached.phone,
+      p_email:cached.email,
+      p_service_code:cached.service,
+      p_booking_date:d,
+      p_slot_id:slot,
+      p_people_count:people,
+      p_option_code:option,
+      p_notes:notes,
+      p_same_staff:sameStaff,
+      p_plate:plate,
+      p_spot_type:spotType
+    };
+    const r=await callRpc('create_service_booking_public',body);
+    out.push({date:d,response:r.data,status:r.status,ok:r.ok && !r.data?.error});
+  }
+
+  const okOnly=out.filter(x=>x.ok);
+  let txt=`Criados: ${okOnly.length}/${out.length}\n`+out.map(x=>`${x.date}: ${x.ok?'OK':'ERRO'} - ${(x.response?.message||x.response?.booking_id||'')}`).join('\n');
+
+  // se estacionamento e 1 booking ok, gera cartão
+  if(cached.service==='estacionamento' && okOnly[0]?.response?.booking_id){
+    const card=await callRpc('get_parking_card_public',{p_booking_id:okOnly[0].response.booking_id});
+    txt += `\n\nCartão vaga:\n${JSON.stringify(card.data,null,2)}`;
+  }
+
+  document.getElementById('result').textContent=txt;
+};
+</script>
+</body>
+</html>
